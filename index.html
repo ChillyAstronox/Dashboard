@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Ember — Dashboard</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='1' x2='0' y2='0'%3E%3Cstop offset='0%25' stop-color='%23c4291b'/%3E%3Cstop offset='55%25' stop-color='%23ff4433'/%3E%3Cstop offset='100%25' stop-color='%23ff8a5c'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath fill='%23000' d='M0 0h100v100H0z'/%3E%3Cpath fill='url(%23g)' d='M50 6c4 16-10 20-10 34 0 8 6 12 12 12 8 0 13-7 11-16 9 8 14 20 14 30 0 17-14 28-31 28S15 83 15 66c0-13 7-22 15-31 8-9 15-16 20-29z'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -119,9 +120,8 @@
   #widget-calendar{grid-column:span 8;}
   #widget-twitch{grid-column:span 7;}
   #widget-notes{grid-column:span 5;}
-  #widget-quicklinks{grid-column:span 12;}
   @media (max-width:920px){
-    #widget-weather,#widget-calendar,#widget-twitch,#widget-notes,#widget-quicklinks{grid-column:span 12 !important;}
+    #widget-weather,#widget-calendar,#widget-twitch,#widget-notes{grid-column:span 12 !important;}
   }
 
   /* ---------- Weather ---------- */
@@ -189,33 +189,6 @@
   .twitch-empty{color:var(--text-secondary); font-size:13px; line-height:1.7;}
   .twitch-empty button{margin-top:10px;}
 
-  /* ---------- Quick Links ---------- */
-  .quicklinks-grid{display:flex; flex-wrap:wrap; gap:10px; margin-top:14px;}
-  .quicklink-item{
-    position:relative; display:flex; align-items:center; gap:8px; background:rgba(255,255,255,0.03);
-    border:1px solid var(--border-soft); border-radius:12px; padding:10px 14px; text-decoration:none;
-    color:var(--text-primary); font-size:13px; font-weight:600; transition:.15s;
-  }
-  .quicklink-item:hover{border-color:var(--border-accent); background:var(--bg-card-hover); color:var(--accent);}
-  .quicklink-item .fav{width:16px;height:16px; border-radius:4px; flex-shrink:0;}
-  .quicklink-item .del{
-    background:none; border:none; color:var(--text-tertiary); cursor:pointer; font-size:12px; margin-left:2px;
-  }
-  .quicklink-item .del:hover{color:var(--accent);}
-  .quicklinks-form{display:flex; gap:8px; flex-wrap:wrap;}
-  .quicklinks-form input{
-    background:rgba(255,255,255,0.04); border:1px solid var(--border-soft); border-radius:9px;
-    padding:9px 11px; color:var(--text-primary); font-size:13px; outline:none; font-family:var(--font-display);
-  }
-  .quicklinks-form input:focus{border-color:var(--accent);}
-  .quicklinks-form input#qlLabel{flex:1; min-width:120px;}
-  .quicklinks-form input#qlUrl{flex:2; min-width:180px;}
-  .quicklinks-form button{
-    background:var(--accent); border:none; color:#fff; border-radius:9px; padding:0 16px; cursor:pointer; font-weight:700; font-size:16px;
-  }
-  .quicklinks-form button:hover{background:var(--accent-dim);}
-  .quicklinks-empty{color:var(--text-tertiary); font-size:12.5px;}
-
   /* ---------- Notes ---------- */
   .note-input-row{display:flex; gap:8px; margin-bottom:14px;}
   .note-input-row input{
@@ -231,10 +204,9 @@
   .notes-list{display:flex; flex-direction:column; gap:8px; max-height:230px; overflow-y:auto;}
   .note-item{
     background:rgba(255,255,255,0.03); border:1px solid var(--border-soft); border-radius:10px;
-    padding:10px 12px; font-size:13px; display:flex; justify-content:space-between; align-items:flex-start; gap:8px;
+    padding:10px 12px; font-size:13px; display:flex; justify-content:space-between; align-items:center; gap:8px;
   }
   .note-item .txt{white-space:pre-wrap; word-break:break-word; line-height:1.4;}
-  .note-item .meta{font-size:10.5px; color:var(--text-tertiary); margin-top:4px; font-family:var(--font-mono);}
   .note-item button{background:none; border:none; color:var(--text-tertiary); cursor:pointer; font-size:14px; flex-shrink:0;}
   .note-item button:hover{color:var(--accent);}
   .notes-empty{color:var(--text-tertiary); font-size:12.5px;}
@@ -411,18 +383,6 @@
         </div>
         <div class="notes-list" id="notesList"></div>
       </section>
-
-      <section class="card" id="widget-quicklinks" data-widget="quicklinks">
-        <div class="card-head">
-          <div class="card-title"><span class="ic">🔗</span>Quick Links</div>
-        </div>
-        <div class="quicklinks-form">
-          <input type="text" id="qlLabel" placeholder="Name (e.g. Gmail)" maxlength="24">
-          <input type="text" id="qlUrl" placeholder="URL (e.g. gmail.com)">
-          <button id="addQuickLinkBtn">+</button>
-        </div>
-        <div class="quicklinks-grid" id="quickLinksGrid"></div>
-      </section>
     </main>
   </div>
 
@@ -557,17 +517,16 @@
     name: "",
     theme: { preset: "ember", accent: "#ff4433", bg: "#0c0908", glowColor: "#ff4433", glowIntensity: 55 },
     layout: {
-      order: ["weather","calendar","twitch","notes","quicklinks"],
-      visible: { weather:true, calendar:true, twitch:true, notes:true, quicklinks:true },
-      widths: { weather:4, calendar:8, twitch:7, notes:5, quicklinks:12 },
+      order: ["weather","calendar","twitch","notes"],
+      visible: { weather:true, calendar:true, twitch:true, notes:true },
+      widths: { weather:4, calendar:8, twitch:7, notes:5 },
       clock24: false,
       clockSecs: false
     },
     twitch: { clientId:"", accessToken:"", userId:"", login:"", displayName:"" },
     weather: { lat:null, lon:null, name:"", unit:"fahrenheit" },
     calendarEvents: {},
-    notes: [],
-    quickLinks: []
+    notes: []
   };
   const PRESETS = [
     { id:"ember",   name:"Ember",   accent:"#ff4433", bg:"#0c0908" },
@@ -586,7 +545,6 @@
     });
     if(!s.theme.glowColor) s.theme.glowColor = s.theme.accent || DEFAULT_STATE.theme.glowColor;
     if(s.theme.glowIntensity === undefined) s.theme.glowIntensity = s.theme.glow === false ? 0 : DEFAULT_STATE.theme.glowIntensity;
-    if(!s.quickLinks) s.quickLinks = [];
     return s;
   }
   function loadState(){
@@ -888,13 +846,12 @@
   /* ============ NOTES ============ */
   function renderNotes(){
     const list = document.getElementById("notesList");
-    if(!state.notes.length){ list.innerHTML = `<div class="notes-empty">No notes yet — jot something down above.</div>`; return; }
+    if(!state.notes.length){ list.innerHTML = `<div class="notes-empty">No notes yet — Write something down above.</div>`; return; }
     list.innerHTML = "";
     state.notes.slice().reverse().forEach(n=>{
       const el = document.createElement("div");
       el.className = "note-item";
-      const when = new Date(n.createdAt);
-      el.innerHTML = `<div><div class="txt">${escapeHtml(n.text)}</div><div class="meta">${when.toLocaleDateString(undefined,{month:"short",day:"numeric"})} · ${when.toLocaleTimeString(undefined,{hour:"numeric",minute:"2-digit"})}</div></div><button title="Delete">✕</button>`;
+      el.innerHTML = `<div class="txt">${escapeHtml(n.text)}</div><button title="Delete">✕</button>`;
       el.querySelector("button").onclick = ()=>{
         state.notes = state.notes.filter(x=>x.id!==n.id);
         save(); renderNotes();
@@ -912,52 +869,6 @@
   }
   document.getElementById("addNoteBtn").addEventListener("click", addNote);
   document.getElementById("noteInput").addEventListener("keydown", e=>{ if(e.key==="Enter") addNote(); });
-
-  /* ============ QUICK LINKS ============ */
-  function normalizeUrl(u){
-    u = u.trim();
-    if(!u) return "";
-    if(!/^https?:\/\//i.test(u)) u = "https://" + u;
-    return u;
-  }
-  function faviconFor(url){
-    try{ const host = new URL(url).hostname; return `https://www.google.com/s2/favicons?domain=${host}&sz=32`; }
-    catch(e){ return ""; }
-  }
-  function renderQuickLinks(){
-    const grid = document.getElementById("quickLinksGrid");
-    if(!state.quickLinks.length){ grid.innerHTML = `<div class="quicklinks-empty">No quick links yet — add one above.</div>`; return; }
-    grid.innerHTML = "";
-    state.quickLinks.forEach(link=>{
-      const a = document.createElement("a");
-      a.className = "quicklink-item";
-      a.href = link.url; a.target = "_blank"; a.rel = "noopener";
-      const fav = faviconFor(link.url);
-      a.innerHTML = `${fav ? `<img class="fav" src="${fav}" alt="">` : ""}<span>${escapeHtml(link.label)}</span>`;
-      const del = document.createElement("button");
-      del.className = "del"; del.textContent = "✕"; del.title = "Remove";
-      del.onclick = (e)=>{
-        e.preventDefault(); e.stopPropagation();
-        state.quickLinks = state.quickLinks.filter(x=>x.id!==link.id);
-        save(); renderQuickLinks();
-      };
-      a.appendChild(del);
-      grid.appendChild(a);
-    });
-  }
-  function addQuickLink(){
-    const labelInput = document.getElementById("qlLabel");
-    const urlInput = document.getElementById("qlUrl");
-    const label = labelInput.value.trim();
-    const url = normalizeUrl(urlInput.value);
-    if(!label || !url) return;
-    state.quickLinks.push({ id:"ql"+Date.now(), label, url });
-    labelInput.value = ""; urlInput.value = "";
-    save(true); renderQuickLinks();
-  }
-  document.getElementById("addQuickLinkBtn").addEventListener("click", addQuickLink);
-  document.getElementById("qlLabel").addEventListener("keydown", e=>{ if(e.key==="Enter") addQuickLink(); });
-  document.getElementById("qlUrl").addEventListener("keydown", e=>{ if(e.key==="Enter") addQuickLink(); });
 
   /* ============ TWITCH ============ */
   function getRedirectUri(){
@@ -1071,8 +982,7 @@
     weather:{label:"Weather", icon:"🌤️"},
     calendar:{label:"Calendar", icon:"🗓️"},
     twitch:{label:"Live on Twitch", icon:"🟣"},
-    notes:{label:"Notes", icon:"📝"},
-    quicklinks:{label:"Quick Links", icon:"🔗"}
+    notes:{label:"Notes", icon:"📝"}
   };
   const WIDTH_OPTIONS = [
     {v:3, label:"Narrow"},
@@ -1206,7 +1116,6 @@
     updateGreeting(); tick();
     renderCalendar(); renderAgenda();
     renderNotes();
-    renderQuickLinks();
     renderLayoutSettings(); applyLayout();
     renderTwitchStatus(); renderTwitchWidget();
     fetchWeather();
