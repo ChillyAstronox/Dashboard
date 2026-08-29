@@ -1,0 +1,1084 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ember — Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-base:#0c0908;
+    --bg-base-2:#140d0c;
+    --bg-card:rgba(26,18,17,0.66);
+    --bg-card-solid:#191211;
+    --bg-card-hover:rgba(34,23,21,0.8);
+    --border-soft:rgba(255,255,255,0.07);
+    --border-accent:rgba(255,90,60,0.22);
+    --text-primary:#f3eae4;
+    --text-secondary:#a9938c;
+    --text-tertiary:#6f5c56;
+    --accent:#ff4433;
+    --accent-dim:#c4291b;
+    --accent-glow:rgba(255,68,51,0.38);
+    --ember:#ff8a5c;
+    --live:#3ddc63;
+    --radius-lg:22px;
+    --radius-md:15px;
+    --radius-sm:10px;
+    --font-display:'Inter',system-ui,-apple-system,sans-serif;
+    --font-mono:'JetBrains Mono','SF Mono',Menlo,monospace;
+    --glow-opacity:1;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html,body{height:100%;}
+  body{
+    font-family:var(--font-display);
+    background:
+      radial-gradient(ellipse 900px 500px at 50% -10%, color-mix(in srgb, var(--accent) 14%, transparent), transparent 60%),
+      linear-gradient(180deg, var(--bg-base-2) 0%, var(--bg-base) 45%);
+    background-attachment:fixed;
+    color:var(--text-primary);
+    min-height:100vh;
+    overflow-x:hidden;
+    position:relative;
+  }
+  ::selection{background:var(--accent);color:#fff;}
+  ::-webkit-scrollbar{width:8px;height:8px;}
+  ::-webkit-scrollbar-thumb{background:var(--border-accent);border-radius:8px;}
+  ::-webkit-scrollbar-track{background:transparent;}
+
+  .grain{position:fixed;inset:0;pointer-events:none;opacity:.035;z-index:1;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  .ember-orb{
+    position:fixed; top:-180px; left:50%; transform:translateX(-50%);
+    width:640px; height:640px; border-radius:50%;
+    background:radial-gradient(circle, var(--accent-glow) 0%, transparent 70%);
+    filter:blur(10px);
+    opacity:calc(var(--glow-opacity) * 0.55);
+    animation:breathe 7s ease-in-out infinite;
+    pointer-events:none; z-index:0;
+  }
+  @keyframes breathe{
+    0%,100%{ transform:translateX(-50%) scale(1); opacity:calc(var(--glow-opacity) * 0.45);}
+    50%{ transform:translateX(-50%) scale(1.08); opacity:calc(var(--glow-opacity) * 0.65);}
+  }
+  @media (prefers-reduced-motion: reduce){ .ember-orb{animation:none;} }
+
+  .app{position:relative; z-index:2; max-width:1180px; margin:0 auto; padding:56px 28px 120px;}
+
+  /* ---------- Hero ---------- */
+  .hero{text-align:center; margin-bottom:44px;}
+  .hero-greeting{font-size:14px; color:var(--text-secondary); letter-spacing:.06em; text-transform:uppercase; font-weight:600; margin-bottom:10px;}
+  .clock{
+    font-family:var(--font-mono); font-weight:700;
+    font-size:clamp(56px, 11vw, 108px);
+    line-height:1; letter-spacing:-.01em;
+    color:var(--text-primary);
+    text-shadow:0 0 40px var(--accent-glow);
+  }
+  .clock .secs{font-size:.42em; color:var(--accent); opacity:.85; margin-left:6px;}
+  .date-row{
+    margin-top:14px; font-size:15px; color:var(--text-secondary);
+    display:flex; align-items:center; justify-content:center; gap:10px; flex-wrap:wrap;
+  }
+  .date-row .dot{color:var(--text-tertiary);}
+  .date-row .weather-inline{display:flex; align-items:center; gap:6px; color:var(--text-primary); font-weight:500;}
+
+  /* ---------- Bento grid ---------- */
+  .bento{
+    display:grid;
+    grid-template-columns:repeat(12, 1fr);
+    gap:18px;
+  }
+  .card{
+    background:var(--bg-card);
+    border:1px solid var(--border-soft);
+    border-radius:var(--radius-lg);
+    backdrop-filter:blur(18px);
+    -webkit-backdrop-filter:blur(18px);
+    padding:22px;
+    position:relative;
+    transition:border-color .2s ease, transform .2s ease;
+  }
+  .card:hover{border-color:var(--border-accent);}
+  .card-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;}
+  .card-title{font-size:13px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--text-secondary); display:flex; align-items:center; gap:8px;}
+  .card-title .ic{font-size:15px;}
+  .card-action{
+    background:transparent; border:1px solid var(--border-soft); color:var(--text-secondary);
+    border-radius:8px; padding:5px 9px; font-size:12px; cursor:pointer; font-family:var(--font-display);
+    transition:.15s;
+  }
+  .card-action:hover{border-color:var(--accent); color:var(--text-primary);}
+
+  #widget-weather{grid-column:span 4;}
+  #widget-calendar{grid-column:span 8;}
+  #widget-twitch{grid-column:span 7;}
+  #widget-notes{grid-column:span 5;}
+  @media (max-width:920px){
+    #widget-weather,#widget-calendar,#widget-twitch,#widget-notes{grid-column:span 12;}
+  }
+
+  /* ---------- Weather ---------- */
+  .weather-main{display:flex; align-items:center; gap:16px;}
+  .weather-icon{font-size:52px; line-height:1;}
+  .weather-temp{font-family:var(--font-mono); font-size:40px; font-weight:700;}
+  .weather-desc{color:var(--text-secondary); font-size:13px; margin-top:2px;}
+  .weather-loc{color:var(--text-tertiary); font-size:12px; margin-top:14px;}
+  .weather-empty{color:var(--text-secondary); font-size:13px; line-height:1.6;}
+  .weather-empty button{margin-top:10px;}
+
+  /* ---------- Calendar ---------- */
+  .cal-nav{display:flex; align-items:center; gap:10px;}
+  .cal-nav button{background:none;border:1px solid var(--border-soft); color:var(--text-secondary); width:26px;height:26px;border-radius:8px;cursor:pointer;font-family:var(--font-display);}
+  .cal-nav button:hover{border-color:var(--accent); color:var(--text-primary);}
+  .cal-month-label{font-size:13px; font-weight:600; min-width:120px; text-align:center;}
+  .cal-body{display:flex; gap:20px;}
+  .cal-grid-wrap{flex:1.3;}
+  .cal-weekdays{display:grid; grid-template-columns:repeat(7,1fr); text-align:center; font-size:10px; color:var(--text-tertiary); letter-spacing:.04em; margin-bottom:6px;}
+  .cal-grid{display:grid; grid-template-columns:repeat(7,1fr); gap:4px;}
+  .cal-day{
+    aspect-ratio:1; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    border-radius:9px; font-size:12px; color:var(--text-secondary); cursor:pointer; position:relative;
+    transition:.12s; border:1px solid transparent;
+  }
+  .cal-day:hover{background:var(--bg-card-hover);}
+  .cal-day.other-month{color:var(--text-tertiary); opacity:.35;}
+  .cal-day.today{border-color:var(--accent); color:var(--text-primary); font-weight:700;}
+  .cal-day.selected{background:var(--accent); color:#fff; font-weight:700;}
+  .cal-day .evt-dot{width:4px;height:4px;border-radius:50%;background:var(--accent); margin-top:2px;}
+  .cal-day.selected .evt-dot{background:#fff;}
+  .cal-agenda{flex:1; min-width:0; border-left:1px solid var(--border-soft); padding-left:18px; display:flex; flex-direction:column;}
+  .cal-agenda-title{font-size:12px; color:var(--text-secondary); margin-bottom:10px; font-weight:600;}
+  .agenda-list{display:flex; flex-direction:column; gap:8px; max-height:170px; overflow-y:auto; margin-bottom:10px;}
+  .agenda-empty{color:var(--text-tertiary); font-size:12px;}
+  .agenda-item{
+    background:rgba(255,255,255,0.03); border:1px solid var(--border-soft); border-radius:9px;
+    padding:8px 10px; font-size:12.5px; display:flex; align-items:center; justify-content:space-between; gap:8px;
+  }
+  .agenda-item .t{color:var(--accent); font-family:var(--font-mono); font-size:11px; margin-right:6px;}
+  .agenda-item button{background:none; border:none; color:var(--text-tertiary); cursor:pointer; font-size:13px;}
+  .agenda-item button:hover{color:var(--accent);}
+  .add-event-form{display:flex; flex-direction:column; gap:8px; margin-top:auto;}
+  .add-event-form input{
+    background:rgba(255,255,255,0.04); border:1px solid var(--border-soft); border-radius:8px;
+    padding:8px 10px; color:var(--text-primary); font-size:12.5px; font-family:var(--font-display); outline:none;
+  }
+  .add-event-form input:focus{border-color:var(--accent);}
+  .add-event-form .row{display:flex; gap:8px;}
+  .add-event-form button.primary{
+    background:var(--accent); border:none; color:#fff; border-radius:8px; padding:8px 12px; font-size:12.5px;
+    cursor:pointer; font-weight:600; font-family:var(--font-display);
+  }
+  .add-event-form button.primary:hover{background:var(--accent-dim);}
+
+  /* ---------- Twitch ---------- */
+  .twitch-list{display:flex; flex-direction:column; gap:10px; max-height:280px; overflow-y:auto;}
+  .stream-item{
+    display:flex; align-items:center; gap:12px; background:rgba(255,255,255,0.03);
+    border:1px solid var(--border-soft); border-radius:12px; padding:9px;
+    text-decoration:none; color:inherit; transition:.15s;
+  }
+  .stream-item:hover{border-color:var(--border-accent); background:var(--bg-card-hover);}
+  .stream-thumb{width:72px; height:40px; border-radius:6px; object-fit:cover; background:#000; flex-shrink:0;}
+  .stream-info{min-width:0; flex:1;}
+  .stream-title{font-size:12.5px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .stream-meta{font-size:11.5px; color:var(--text-secondary); display:flex; align-items:center; gap:6px; margin-top:2px;}
+  .live-dot{width:6px;height:6px;border-radius:50%;background:var(--live); box-shadow:0 0 6px var(--live); flex-shrink:0;}
+  .stream-viewers{font-family:var(--font-mono); color:var(--text-tertiary);}
+  .twitch-empty{color:var(--text-secondary); font-size:13px; line-height:1.7;}
+  .twitch-empty button{margin-top:10px;}
+
+  /* ---------- Notes ---------- */
+  .note-input-row{display:flex; gap:8px; margin-bottom:14px;}
+  .note-input-row input{
+    flex:1; background:rgba(255,255,255,0.04); border:1px solid var(--border-soft); border-radius:9px;
+    padding:9px 12px; color:var(--text-primary); font-size:13px; outline:none; font-family:var(--font-display);
+  }
+  .note-input-row input:focus{border-color:var(--accent);}
+  .note-input-row button{
+    background:var(--accent); border:none; color:#fff; border-radius:9px; padding:0 16px; cursor:pointer;
+    font-weight:700; font-size:16px;
+  }
+  .note-input-row button:hover{background:var(--accent-dim);}
+  .notes-list{display:flex; flex-direction:column; gap:8px; max-height:230px; overflow-y:auto;}
+  .note-item{
+    background:rgba(255,255,255,0.03); border:1px solid var(--border-soft); border-radius:10px;
+    padding:10px 12px; font-size:13px; display:flex; justify-content:space-between; align-items:flex-start; gap:8px;
+  }
+  .note-item .txt{white-space:pre-wrap; word-break:break-word; line-height:1.4;}
+  .note-item .meta{font-size:10.5px; color:var(--text-tertiary); margin-top:4px; font-family:var(--font-mono);}
+  .note-item button{background:none; border:none; color:var(--text-tertiary); cursor:pointer; font-size:14px; flex-shrink:0;}
+  .note-item button:hover{color:var(--accent);}
+  .notes-empty{color:var(--text-tertiary); font-size:12.5px;}
+
+  /* ---------- FAB ---------- */
+  .fab{
+    position:fixed; bottom:28px; right:28px; width:52px; height:52px; border-radius:50%;
+    background:var(--bg-card-solid); border:1px solid var(--border-accent); color:var(--text-secondary);
+    font-size:19px; cursor:pointer; display:flex; align-items:center; justify-content:center;
+    box-shadow:0 8px 24px rgba(0,0,0,.4); backdrop-filter:blur(10px); z-index:20; transition:.2s;
+  }
+  .fab:hover{color:var(--accent); border-color:var(--accent); transform:rotate(35deg);}
+
+  /* ---------- Settings overlay ---------- */
+  .overlay{
+    position:fixed; inset:0; background:rgba(6,4,4,.6); backdrop-filter:blur(6px);
+    display:none; align-items:flex-start; justify-content:center; z-index:50; padding:6vh 20px;
+  }
+  .overlay.open{display:flex;}
+  .panel{
+    background:var(--bg-card-solid); border:1px solid var(--border-soft); border-radius:var(--radius-lg);
+    width:100%; max-width:640px; max-height:86vh; display:flex; flex-direction:column; overflow:hidden;
+    box-shadow:0 24px 60px rgba(0,0,0,.5);
+    animation:pop .18s ease;
+  }
+  @keyframes pop{from{opacity:0; transform:translateY(8px) scale(.98);} to{opacity:1; transform:translateY(0) scale(1);}}
+  .panel-header{display:flex; align-items:center; justify-content:space-between; padding:18px 22px; border-bottom:1px solid var(--border-soft);}
+  .panel-header h2{font-size:16px; font-weight:700;}
+  .panel-header button{background:none; border:none; color:var(--text-secondary); font-size:18px; cursor:pointer;}
+  .panel-header button:hover{color:var(--accent);}
+  .tabs{display:flex; gap:4px; padding:12px 22px 0; border-bottom:1px solid var(--border-soft); overflow-x:auto;}
+  .tab{
+    background:none; border:none; color:var(--text-secondary); font-size:12.5px; font-weight:600;
+    padding:8px 12px; cursor:pointer; border-bottom:2px solid transparent; white-space:nowrap; font-family:var(--font-display);
+  }
+  .tab.active{color:var(--accent); border-color:var(--accent);}
+  .panel-body{padding:22px; overflow-y:auto;}
+  .pane{display:none; flex-direction:column; gap:18px;}
+  .pane.active{display:flex;}
+  .field-group label{display:block; font-size:12px; font-weight:600; color:var(--text-secondary); margin-bottom:8px; text-transform:uppercase; letter-spacing:.04em;}
+  .field-group input[type=text], .field-group input[type=number]{
+    width:100%; background:rgba(255,255,255,0.04); border:1px solid var(--border-soft); border-radius:9px;
+    padding:9px 11px; color:var(--text-primary); font-size:13px; outline:none; font-family:var(--font-display);
+  }
+  .field-group input:focus{border-color:var(--accent);}
+  .hint{font-size:11.5px; color:var(--text-tertiary); margin-top:6px; line-height:1.5;}
+  .hint a{color:var(--ember);}
+  .swatches{display:flex; gap:10px; flex-wrap:wrap;}
+  .swatch{
+    width:56px; height:56px; border-radius:12px; cursor:pointer; border:2px solid transparent;
+    display:flex; align-items:flex-end; justify-content:center; padding-bottom:5px; font-size:9px; font-weight:700;
+    color:rgba(255,255,255,.85); text-transform:uppercase; letter-spacing:.03em;
+  }
+  .swatch.active{border-color:#fff;}
+  .color-row{display:flex; align-items:center; gap:12px;}
+  .color-row input[type=color]{width:40px; height:40px; border:none; border-radius:10px; background:none; cursor:pointer; padding:0;}
+  .color-row span{font-size:12px; color:var(--text-secondary);}
+  .toggle-row{display:flex; align-items:center; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--border-soft);}
+  .toggle-row:last-child{border-bottom:none;}
+  .toggle-row .label{font-size:13px; font-weight:500;}
+  .toggle-row .sub{font-size:11px; color:var(--text-tertiary); margin-top:2px;}
+  .switch{position:relative; width:40px; height:22px; flex-shrink:0;}
+  .switch input{opacity:0; width:0; height:0;}
+  .slider{position:absolute; inset:0; background:rgba(255,255,255,0.1); border-radius:20px; cursor:pointer; transition:.2s;}
+  .slider:before{content:""; position:absolute; width:16px; height:16px; left:3px; top:3px; background:#fff; border-radius:50%; transition:.2s;}
+  .switch input:checked + .slider{background:var(--accent);}
+  .switch input:checked + .slider:before{transform:translateX(18px);}
+  .layout-order-item{
+    display:flex; align-items:center; justify-content:space-between; background:rgba(255,255,255,0.03);
+    border:1px solid var(--border-soft); border-radius:10px; padding:10px 12px; margin-bottom:8px;
+  }
+  .layout-order-item .left{display:flex; align-items:center; gap:10px;}
+  .order-btns{display:flex; gap:4px;}
+  .order-btns button{background:none; border:1px solid var(--border-soft); color:var(--text-secondary); width:24px; height:24px; border-radius:6px; cursor:pointer;}
+  .order-btns button:hover{border-color:var(--accent); color:var(--text-primary);}
+  .btn-row{display:flex; gap:10px; flex-wrap:wrap;}
+  .btn{
+    background:rgba(255,255,255,0.05); border:1px solid var(--border-soft); color:var(--text-primary);
+    padding:9px 14px; border-radius:9px; font-size:12.5px; cursor:pointer; font-weight:600; font-family:var(--font-display);
+  }
+  .btn:hover{border-color:var(--accent);}
+  .btn.danger:hover{border-color:#ff4444; color:#ff8080;}
+  .btn.accent{background:var(--accent); border-color:var(--accent); color:#fff;}
+  .btn.accent:hover{background:var(--accent-dim);}
+  .status-pill{display:inline-flex; align-items:center; gap:6px; font-size:12px; padding:5px 10px; border-radius:20px; background:rgba(61,220,99,.12); color:var(--live);}
+  .status-pill.off{background:rgba(255,255,255,.06); color:var(--text-tertiary);}
+  #fileImportInput{display:none;}
+  .save-toast{
+    position:fixed; bottom:28px; left:50%; transform:translateX(-50%) translateY(20px); opacity:0;
+    background:var(--bg-card-solid); border:1px solid var(--border-accent); color:var(--text-primary);
+    padding:10px 18px; border-radius:10px; font-size:12.5px; z-index:100; transition:.25s; pointer-events:none;
+  }
+  .save-toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+</style>
+</head>
+<body>
+  <div class="grain"></div>
+  <div class="ember-orb" id="emberOrb"></div>
+
+  <div class="app">
+    <header class="hero">
+      <div class="hero-greeting" id="greeting">Welcome back</div>
+      <div class="clock" id="clock">--:--<span class="secs" id="clockSecs"></span></div>
+      <div class="date-row">
+        <span id="dateStr"></span>
+        <span class="dot">•</span>
+        <span class="weather-inline" id="weatherInline">—</span>
+      </div>
+    </header>
+
+    <main class="bento" id="bento">
+      <section class="card" id="widget-weather" data-widget="weather">
+        <div class="card-head">
+          <div class="card-title"><span class="ic">🌤️</span>Weather</div>
+          <button class="card-action" id="weatherRefresh">↻</button>
+        </div>
+        <div id="weatherBody"><div class="weather-empty">Set a location in Settings → Weather to see current conditions.<br><button class="btn" id="weatherSetupBtn">Set location</button></div></div>
+      </section>
+
+      <section class="card" id="widget-calendar" data-widget="calendar">
+        <div class="card-head">
+          <div class="card-title"><span class="ic">🗓️</span>Calendar</div>
+          <div class="cal-nav">
+            <button id="calPrev">‹</button>
+            <span class="cal-month-label" id="calMonthLabel"></span>
+            <button id="calNext">›</button>
+          </div>
+        </div>
+        <div class="cal-body">
+          <div class="cal-grid-wrap">
+            <div class="cal-weekdays"><span>S</span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span></div>
+            <div class="cal-grid" id="calGrid"></div>
+          </div>
+          <div class="cal-agenda">
+            <div class="cal-agenda-title" id="agendaTitle">Today</div>
+            <div class="agenda-list" id="agendaList"></div>
+            <div class="add-event-form">
+              <input type="text" id="eventTitleInput" placeholder="Event title…" maxlength="80">
+              <div class="row">
+                <input type="text" id="eventTimeInput" placeholder="Time (e.g. 3:30 PM)" style="flex:1">
+                <button class="primary" id="addEventBtn">Add</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="card" id="widget-twitch" data-widget="twitch">
+        <div class="card-head">
+          <div class="card-title"><span class="ic">🟣</span>Live on Twitch</div>
+          <button class="card-action" id="twitchRefresh">↻</button>
+        </div>
+        <div id="twitchBody"><div class="twitch-empty">Link your Twitch account in Settings to see who's live.<br><button class="btn" id="twitchSetupBtn">Connect Twitch</button></div></div>
+      </section>
+
+      <section class="card" id="widget-notes" data-widget="notes">
+        <div class="card-head">
+          <div class="card-title"><span class="ic">📝</span>Notes</div>
+        </div>
+        <div class="note-input-row">
+          <input type="text" id="noteInput" placeholder="Jot something down…" maxlength="500">
+          <button id="addNoteBtn">+</button>
+        </div>
+        <div class="notes-list" id="notesList"></div>
+      </section>
+    </main>
+  </div>
+
+  <button class="fab" id="settingsBtn" title="Settings">⚙</button>
+
+  <!-- Settings Overlay -->
+  <div class="overlay" id="settingsOverlay">
+    <div class="panel">
+      <div class="panel-header">
+        <h2>Settings</h2>
+        <button id="closeSettings">✕</button>
+      </div>
+      <div class="tabs">
+        <button class="tab active" data-tab="theme">Theme</button>
+        <button class="tab" data-tab="layout">Layout</button>
+        <button class="tab" data-tab="twitch">Twitch</button>
+        <button class="tab" data-tab="weather">Weather</button>
+        <button class="tab" data-tab="data">Data</button>
+      </div>
+      <div class="panel-body">
+
+        <div class="pane active" data-pane="theme">
+          <div class="field-group">
+            <label>Your name (for greeting)</label>
+            <input type="text" id="nameInput" placeholder="e.g. Alex" maxlength="30">
+          </div>
+          <div class="field-group">
+            <label>Presets</label>
+            <div class="swatches" id="presetSwatches"></div>
+          </div>
+          <div class="field-group">
+            <label>Custom colors</label>
+            <div class="color-row"><input type="color" id="accentPicker"><span>Accent</span></div>
+            <div class="color-row"><input type="color" id="bgPicker"><span>Background</span></div>
+            <div class="btn-row" style="margin-top:8px;">
+              <button class="btn" id="saveCustomTheme">Save as new preset</button>
+            </div>
+          </div>
+          <div class="toggle-row">
+            <div><div class="label">Ember glow</div><div class="sub">Ambient pulsing glow behind the clock</div></div>
+            <label class="switch"><input type="checkbox" id="glowToggle"><span class="slider"></span></label>
+          </div>
+        </div>
+
+        <div class="pane" data-pane="layout">
+          <div class="field-group">
+            <label>Widgets — show/hide and reorder</label>
+            <div id="layoutOrderList"></div>
+          </div>
+          <div class="toggle-row">
+            <div><div class="label">24-hour clock</div><div class="sub">Show time as 14:30 instead of 2:30 PM</div></div>
+            <label class="switch"><input type="checkbox" id="clock24Toggle"><span class="slider"></span></label>
+          </div>
+          <div class="toggle-row">
+            <div><div class="label">Show seconds</div></div>
+            <label class="switch"><input type="checkbox" id="clockSecsToggle"><span class="slider"></span></label>
+          </div>
+        </div>
+
+        <div class="pane" data-pane="twitch">
+          <div id="twitchStatusArea"></div>
+          <div class="field-group">
+            <label>Client ID</label>
+            <input type="text" id="twitchClientId" placeholder="Your Twitch app's Client ID">
+            <div class="hint">Create a free app at <a href="https://dev.twitch.tv/console/apps" target="_blank" rel="noopener">dev.twitch.tv/console/apps</a>. Set the OAuth Redirect URL to exactly the address below, then paste the Client ID here.</div>
+          </div>
+          <div class="field-group">
+            <label>Redirect URL to register</label>
+            <input type="text" id="redirectUriDisplay" readonly>
+            <div class="btn-row" style="margin-top:8px;">
+              <button class="btn" id="copyRedirect">Copy</button>
+            </div>
+            <div class="hint">Note: Twitch requires https (or localhost). If you're opening this file directly (file://), host it somewhere first — e.g. GitHub Pages — and register that URL instead.</div>
+          </div>
+          <div class="btn-row">
+            <button class="btn accent" id="connectTwitchBtn">Connect Twitch</button>
+            <button class="btn danger" id="disconnectTwitchBtn">Disconnect</button>
+          </div>
+        </div>
+
+        <div class="pane" data-pane="weather">
+          <div class="field-group">
+            <label>City or place name</label>
+            <input type="text" id="weatherSearchInput" placeholder="Search for a city…">
+            <div id="weatherSearchResults" style="margin-top:8px; display:flex; flex-direction:column; gap:6px;"></div>
+          </div>
+          <div class="btn-row">
+            <button class="btn" id="useGeoBtn">Use my current location</button>
+          </div>
+          <div class="field-group">
+            <label>Units</label>
+            <div class="swatches">
+              <button class="btn" id="unitF">°F</button>
+              <button class="btn" id="unitC">°C</button>
+            </div>
+          </div>
+          <div class="hint" id="weatherCurrentLoc"></div>
+        </div>
+
+        <div class="pane" data-pane="data">
+          <div class="field-group">
+            <label>Everything — settings, calendar events, notes and theme — lives in your browser's local storage, tied to this file. Use these to keep a portable backup in a single file.</label>
+          </div>
+          <div class="btn-row">
+            <button class="btn accent" id="exportBtn">Export data (.json)</button>
+            <button class="btn" id="importBtn">Import data</button>
+            <input type="file" id="fileImportInput" accept="application/json">
+          </div>
+          <div class="btn-row">
+            <button class="btn danger" id="resetBtn">Reset everything</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <div class="save-toast" id="saveToast">Saved</div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ============ STATE ============ */
+  const STORAGE_KEY = "emberDashboard_v1";
+  const DEFAULT_STATE = {
+    name: "",
+    theme: { preset: "ember", accent: "#ff4433", bg: "#0c0908", glow: true },
+    layout: {
+      order: ["weather","calendar","twitch","notes"],
+      visible: { weather:true, calendar:true, twitch:true, notes:true },
+      clock24: false,
+      clockSecs: false
+    },
+    twitch: { clientId:"", accessToken:"", userId:"", login:"", displayName:"" },
+    weather: { lat:null, lon:null, name:"", unit:"fahrenheit" },
+    calendarEvents: {},
+    notes: []
+  };
+  const PRESETS = [
+    { id:"ember",   name:"Ember",   accent:"#ff4433", bg:"#0c0908" },
+    { id:"blood",   name:"Blood",   accent:"#d81c3b", bg:"#0a0607" },
+    { id:"obsidian",name:"Obsidian",accent:"#ff5a3c", bg:"#08090a" },
+    { id:"midnight",name:"Midnight",accent:"#ff3b5c", bg:"#0a0a10" },
+    { id:"amber",   name:"Amber",   accent:"#ff9d33", bg:"#0d0906" }
+  ];
+
+  function loadState(){
+    try{
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if(!raw) return structuredClone(DEFAULT_STATE);
+      const parsed = JSON.parse(raw);
+      return deepMerge(structuredClone(DEFAULT_STATE), parsed);
+    }catch(e){
+      console.error("Failed to load state", e);
+      return structuredClone(DEFAULT_STATE);
+    }
+  }
+  function deepMerge(base, over){
+    for(const k in over){
+      if(over[k] && typeof over[k] === "object" && !Array.isArray(over[k]) && base[k] && typeof base[k]==="object"){
+        deepMerge(base[k], over[k]);
+      } else {
+        base[k] = over[k];
+      }
+    }
+    return base;
+  }
+
+  let state = loadState();
+  let saveTimer = null;
+  function save(showToast){
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    if(showToast){
+      const t = document.getElementById("saveToast");
+      t.classList.add("show");
+      clearTimeout(saveTimer);
+      saveTimer = setTimeout(()=>t.classList.remove("show"), 1400);
+    }
+  }
+
+  /* ============ THEME ============ */
+  function applyTheme(){
+    document.documentElement.style.setProperty("--accent", state.theme.accent);
+    document.documentElement.style.setProperty("--bg-base", state.theme.bg);
+    // derive dim/glow from accent
+    const dim = shade(state.theme.accent, -0.25);
+    document.documentElement.style.setProperty("--accent-dim", dim);
+    document.documentElement.style.setProperty("--accent-glow", hexToRgba(state.theme.accent, 0.38));
+    document.documentElement.style.setProperty("--border-accent", hexToRgba(state.theme.accent, 0.22));
+    document.documentElement.style.setProperty("--glow-opacity", state.theme.glow ? "1" : "0");
+    document.getElementById("accentPicker").value = state.theme.accent;
+    document.getElementById("bgPicker").value = state.theme.bg;
+    document.getElementById("glowToggle").checked = state.theme.glow;
+  }
+  function hexToRgba(hex, a){
+    const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+    return `rgba(${r},${g},${b},${a})`;
+  }
+  function shade(hex, pct){
+    const r = Math.max(0,Math.min(255, parseInt(hex.slice(1,3),16) + Math.round(255*pct)));
+    const g = Math.max(0,Math.min(255, parseInt(hex.slice(3,5),16) + Math.round(255*pct)));
+    const b = Math.max(0,Math.min(255, parseInt(hex.slice(5,7),16) + Math.round(255*pct)));
+    return "#" + [r,g,b].map(x=>x.toString(16).padStart(2,"0")).join("");
+  }
+  function renderPresets(){
+    const wrap = document.getElementById("presetSwatches");
+    wrap.innerHTML = "";
+    (state.customPresets || []).length; // noop
+    const all = PRESETS.concat(state.customPresets || []);
+    all.forEach(p=>{
+      const el = document.createElement("div");
+      el.className = "swatch" + (state.theme.preset===p.id ? " active":"");
+      el.style.background = `linear-gradient(135deg, ${p.bg}, ${p.accent})`;
+      el.textContent = p.name;
+      el.title = p.name;
+      el.onclick = ()=>{
+        state.theme.preset = p.id;
+        state.theme.accent = p.accent;
+        state.theme.bg = p.bg;
+        applyTheme(); renderPresets(); save(true);
+      };
+      wrap.appendChild(el);
+    });
+  }
+  document.getElementById("accentPicker").addEventListener("input", e=>{
+    state.theme.accent = e.target.value; state.theme.preset="custom"; applyTheme(); save();
+  });
+  document.getElementById("bgPicker").addEventListener("input", e=>{
+    state.theme.bg = e.target.value; state.theme.preset="custom"; applyTheme(); save();
+  });
+  document.getElementById("glowToggle").addEventListener("change", e=>{
+    state.theme.glow = e.target.checked; applyTheme(); save(true);
+  });
+  document.getElementById("saveCustomTheme").addEventListener("click", ()=>{
+    const name = prompt("Name this theme:");
+    if(!name) return;
+    if(!state.customPresets) state.customPresets = [];
+    const id = "custom_" + Date.now();
+    state.customPresets.push({ id, name, accent: state.theme.accent, bg: state.theme.bg });
+    state.theme.preset = id;
+    renderPresets(); save(true);
+  });
+  document.getElementById("nameInput").addEventListener("input", e=>{
+    state.name = e.target.value; save(); updateGreeting();
+  });
+
+  /* ============ CLOCK & DATE ============ */
+  function updateGreeting(){
+    const h = new Date().getHours();
+    let g = "Good evening";
+    if(h < 5) g = "Still up";
+    else if(h < 12) g = "Good morning";
+    else if(h < 18) g = "Good afternoon";
+    const who = state.name ? `, ${state.name}` : "";
+    document.getElementById("greeting").textContent = g + who;
+  }
+  function tick(){
+    const now = new Date();
+    let h = now.getHours();
+    const m = String(now.getMinutes()).padStart(2,"0");
+    const s = String(now.getSeconds()).padStart(2,"0");
+    let suffix = "";
+    if(!state.layout.clock24){
+      suffix = h >= 12 ? " PM" : " AM";
+      h = h % 12; if(h===0) h = 12;
+    }
+    const hStr = state.layout.clock24 ? String(h).padStart(2,"0") : String(h);
+    document.getElementById("clock").firstChild.textContent = `${hStr}:${m}`;
+    document.getElementById("clockSecs").textContent = state.layout.clockSecs ? `:${s}${suffix}` : suffix;
+    document.getElementById("dateStr").textContent = now.toLocaleDateString(undefined, { weekday:"long", month:"long", day:"numeric" });
+  }
+  document.getElementById("clock24Toggle").addEventListener("change", e=>{ state.layout.clock24=e.target.checked; tick(); save(true); });
+  document.getElementById("clockSecsToggle").addEventListener("change", e=>{ state.layout.clockSecs=e.target.checked; tick(); save(true); });
+
+  /* ============ WEATHER ============ */
+  const WMO = {
+    0:["☀️","Clear sky"],1:["🌤️","Mostly clear"],2:["⛅","Partly cloudy"],3:["☁️","Overcast"],
+    45:["🌫️","Fog"],48:["🌫️","Icy fog"],
+    51:["🌦️","Light drizzle"],53:["🌦️","Drizzle"],55:["🌧️","Heavy drizzle"],
+    61:["🌧️","Light rain"],63:["🌧️","Rain"],65:["🌧️","Heavy rain"],
+    71:["🌨️","Light snow"],73:["🌨️","Snow"],75:["❄️","Heavy snow"],77:["❄️","Snow grains"],
+    80:["🌦️","Rain showers"],81:["🌧️","Rain showers"],82:["⛈️","Violent showers"],
+    85:["🌨️","Snow showers"],86:["🌨️","Snow showers"],
+    95:["⛈️","Thunderstorm"],96:["⛈️","Thunderstorm w/ hail"],99:["⛈️","Severe thunderstorm"]
+  };
+  async function fetchWeather(){
+    const w = state.weather;
+    if(w.lat==null || w.lon==null){
+      document.getElementById("weatherBody").innerHTML = `<div class="weather-empty">Set a location in Settings → Weather to see current conditions.<br><button class="btn" id="weatherSetupBtn2">Set location</button></div>`;
+      document.getElementById("weatherInline").textContent = "—";
+      const b = document.getElementById("weatherSetupBtn2");
+      if(b) b.onclick = ()=>openSettings("weather");
+      return;
+    }
+    document.getElementById("weatherBody").innerHTML = `<div class="weather-empty">Loading…</div>`;
+    try{
+      const unit = w.unit === "celsius" ? "celsius" : "fahrenheit";
+      const url = `https://api.open-meteo.com/v1/forecast?latitude=${w.lat}&longitude=${w.lon}&current=temperature_2m,weather_code&temperature_unit=${unit}`;
+      const res = await fetch(url);
+      const data = await res.json();
+      const temp = Math.round(data.current.temperature_2m);
+      const code = data.current.weather_code;
+      const [icon, desc] = WMO[code] || ["🌡️","Unknown"];
+      const unitSym = unit === "celsius" ? "°C" : "°F";
+      document.getElementById("weatherBody").innerHTML = `
+        <div class="weather-main">
+          <div class="weather-icon">${icon}</div>
+          <div>
+            <div class="weather-temp">${temp}${unitSym}</div>
+            <div class="weather-desc">${desc}</div>
+          </div>
+        </div>
+        <div class="weather-loc">${w.name || "Current location"}</div>
+      `;
+      document.getElementById("weatherInline").innerHTML = `${icon} ${temp}${unitSym} ${w.name ? "in "+w.name : ""}`;
+    }catch(e){
+      document.getElementById("weatherBody").innerHTML = `<div class="weather-empty">Couldn't load weather. Check your connection and try again.<br><button class="btn" id="weatherRetry">Retry</button></div>`;
+      const b = document.getElementById("weatherRetry"); if(b) b.onclick = fetchWeather;
+    }
+  }
+  document.getElementById("weatherRefresh").addEventListener("click", fetchWeather);
+  document.getElementById("weatherSetupBtn").addEventListener("click", ()=>openSettings("weather"));
+  document.getElementById("useGeoBtn").addEventListener("click", ()=>{
+    if(!navigator.geolocation){ alert("Geolocation isn't available in this browser."); return; }
+    navigator.geolocation.getCurrentPosition(pos=>{
+      state.weather.lat = pos.coords.latitude;
+      state.weather.lon = pos.coords.longitude;
+      state.weather.name = "Current location";
+      document.getElementById("weatherCurrentLoc").textContent = "Using your current location.";
+      save(true); fetchWeather();
+    }, err=>{ alert("Couldn't get your location: " + err.message); });
+  });
+  let weatherSearchTimer = null;
+  document.getElementById("weatherSearchInput").addEventListener("input", e=>{
+    clearTimeout(weatherSearchTimer);
+    const q = e.target.value.trim();
+    const results = document.getElementById("weatherSearchResults");
+    if(q.length < 2){ results.innerHTML=""; return; }
+    weatherSearchTimer = setTimeout(async ()=>{
+      try{
+        const res = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(q)}&count=5`);
+        const data = await res.json();
+        results.innerHTML = "";
+        (data.results||[]).forEach(r=>{
+          const el = document.createElement("button");
+          el.className = "btn";
+          el.style.textAlign = "left";
+          el.textContent = `${r.name}${r.admin1 ? ", "+r.admin1 : ""}, ${r.country}`;
+          el.onclick = ()=>{
+            state.weather.lat = r.latitude; state.weather.lon = r.longitude;
+            state.weather.name = `${r.name}, ${r.country_code}`;
+            document.getElementById("weatherCurrentLoc").textContent = "Location: " + state.weather.name;
+            results.innerHTML = ""; document.getElementById("weatherSearchInput").value = "";
+            save(true); fetchWeather();
+          };
+          results.appendChild(el);
+        });
+      }catch(e){ /* silent */ }
+    }, 350);
+  });
+  document.getElementById("unitF").addEventListener("click", ()=>{ state.weather.unit="fahrenheit"; save(true); fetchWeather(); });
+  document.getElementById("unitC").addEventListener("click", ()=>{ state.weather.unit="celsius"; save(true); fetchWeather(); });
+
+  /* ============ CALENDAR ============ */
+  let calViewDate = new Date();
+  let selectedDate = fmtDate(new Date());
+  function fmtDate(d){ return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; }
+
+  function renderCalendar(){
+    const year = calViewDate.getFullYear(), month = calViewDate.getMonth();
+    document.getElementById("calMonthLabel").textContent = calViewDate.toLocaleDateString(undefined,{month:"long", year:"numeric"});
+    const grid = document.getElementById("calGrid");
+    grid.innerHTML = "";
+    const firstDay = new Date(year, month, 1);
+    const startOffset = firstDay.getDay();
+    const daysInMonth = new Date(year, month+1, 0).getDate();
+    const daysInPrevMonth = new Date(year, month, 0).getDate();
+    const todayStr = fmtDate(new Date());
+
+    const cells = [];
+    for(let i=startOffset-1; i>=0; i--) cells.push({d: daysInPrevMonth-i, other:true, month: month-1});
+    for(let i=1; i<=daysInMonth; i++) cells.push({d:i, other:false, month});
+    while(cells.length % 7 !== 0 || cells.length < 42) cells.push({d: cells.length - (startOffset+daysInMonth) + 1, other:true, month: month+1});
+
+    cells.forEach(c=>{
+      const realDate = new Date(year, c.month, c.d);
+      const dateStr = fmtDate(realDate);
+      const el = document.createElement("div");
+      el.className = "cal-day" + (c.other ? " other-month":"") + (dateStr===todayStr ? " today":"") + (dateStr===selectedDate ? " selected":"");
+      const hasEvents = state.calendarEvents[dateStr] && state.calendarEvents[dateStr].length;
+      el.innerHTML = `<span>${c.d}</span>` + (hasEvents ? `<span class="evt-dot"></span>` : "");
+      el.onclick = ()=>{ selectedDate = dateStr; renderCalendar(); renderAgenda(); };
+      grid.appendChild(el);
+    });
+  }
+  function renderAgenda(){
+    const d = new Date(selectedDate + "T00:00:00");
+    const todayStr = fmtDate(new Date());
+    document.getElementById("agendaTitle").textContent = selectedDate === todayStr
+      ? "Today" : d.toLocaleDateString(undefined,{weekday:"long", month:"short", day:"numeric"});
+    const list = document.getElementById("agendaList");
+    const events = (state.calendarEvents[selectedDate] || []).slice().sort((a,b)=> (a.time||"").localeCompare(b.time||""));
+    if(!events.length){ list.innerHTML = `<div class="agenda-empty">No events yet.</div>`; return; }
+    list.innerHTML = "";
+    events.forEach(ev=>{
+      const el = document.createElement("div");
+      el.className = "agenda-item";
+      el.innerHTML = `<span>${ev.time ? `<span class="t">${escapeHtml(ev.time)}</span>`:""}${escapeHtml(ev.title)}</span><button title="Delete">✕</button>`;
+      el.querySelector("button").onclick = ()=>{
+        state.calendarEvents[selectedDate] = state.calendarEvents[selectedDate].filter(x=>x.id!==ev.id);
+        if(!state.calendarEvents[selectedDate].length) delete state.calendarEvents[selectedDate];
+        save(); renderCalendar(); renderAgenda();
+      };
+      list.appendChild(el);
+    });
+  }
+  function escapeHtml(s){ const d=document.createElement("div"); d.textContent=s; return d.innerHTML; }
+
+  document.getElementById("calPrev").addEventListener("click", ()=>{ calViewDate.setMonth(calViewDate.getMonth()-1); renderCalendar(); });
+  document.getElementById("calNext").addEventListener("click", ()=>{ calViewDate.setMonth(calViewDate.getMonth()+1); renderCalendar(); });
+  document.getElementById("addEventBtn").addEventListener("click", addEvent);
+  document.getElementById("eventTitleInput").addEventListener("keydown", e=>{ if(e.key==="Enter") addEvent(); });
+  document.getElementById("eventTimeInput").addEventListener("keydown", e=>{ if(e.key==="Enter") addEvent(); });
+  function addEvent(){
+    const titleInput = document.getElementById("eventTitleInput");
+    const timeInput = document.getElementById("eventTimeInput");
+    const title = titleInput.value.trim();
+    if(!title) return;
+    if(!state.calendarEvents[selectedDate]) state.calendarEvents[selectedDate] = [];
+    state.calendarEvents[selectedDate].push({ id: "ev"+Date.now()+Math.random().toString(36).slice(2,6), title, time: timeInput.value.trim() });
+    titleInput.value=""; timeInput.value="";
+    save(true); renderCalendar(); renderAgenda();
+  }
+
+  /* ============ NOTES ============ */
+  function renderNotes(){
+    const list = document.getElementById("notesList");
+    if(!state.notes.length){ list.innerHTML = `<div class="notes-empty">No notes yet — jot something down above.</div>`; return; }
+    list.innerHTML = "";
+    state.notes.slice().reverse().forEach(n=>{
+      const el = document.createElement("div");
+      el.className = "note-item";
+      const when = new Date(n.createdAt);
+      el.innerHTML = `<div><div class="txt">${escapeHtml(n.text)}</div><div class="meta">${when.toLocaleDateString(undefined,{month:"short",day:"numeric"})} · ${when.toLocaleTimeString(undefined,{hour:"numeric",minute:"2-digit"})}</div></div><button title="Delete">✕</button>`;
+      el.querySelector("button").onclick = ()=>{
+        state.notes = state.notes.filter(x=>x.id!==n.id);
+        save(); renderNotes();
+      };
+      list.appendChild(el);
+    });
+  }
+  function addNote(){
+    const input = document.getElementById("noteInput");
+    const text = input.value.trim();
+    if(!text) return;
+    state.notes.push({ id:"note"+Date.now(), text, createdAt: Date.now() });
+    input.value = "";
+    save(true); renderNotes();
+  }
+  document.getElementById("addNoteBtn").addEventListener("click", addNote);
+  document.getElementById("noteInput").addEventListener("keydown", e=>{ if(e.key==="Enter") addNote(); });
+
+  /* ============ TWITCH ============ */
+  function getRedirectUri(){
+    return window.location.origin + window.location.pathname;
+  }
+  document.getElementById("redirectUriDisplay").value = getRedirectUri();
+  document.getElementById("copyRedirect").addEventListener("click", ()=>{
+    navigator.clipboard.writeText(getRedirectUri());
+  });
+  document.getElementById("twitchClientId").addEventListener("input", e=>{ state.twitch.clientId = e.target.value.trim(); save(); });
+
+  function parseImplicitToken(){
+    if(window.location.hash && window.location.hash.includes("access_token")){
+      const params = new URLSearchParams(window.location.hash.slice(1));
+      const token = params.get("access_token");
+      if(token){
+        state.twitch.accessToken = token;
+        save();
+        history.replaceState(null, "", window.location.pathname + window.location.search);
+        return true;
+      }
+    }
+    return false;
+  }
+  document.getElementById("connectTwitchBtn").addEventListener("click", ()=>{
+    if(!state.twitch.clientId){ alert("Enter your Twitch app's Client ID first."); return; }
+    const redirect = encodeURIComponent(getRedirectUri());
+    const url = `https://id.twitch.tv/oauth2/authorize?client_id=${encodeURIComponent(state.twitch.clientId)}&redirect_uri=${redirect}&response_type=token&scope=user:read:follows`;
+    window.location.href = url;
+  });
+  document.getElementById("disconnectTwitchBtn").addEventListener("click", ()=>{
+    state.twitch.accessToken=""; state.twitch.userId=""; state.twitch.login=""; state.twitch.displayName="";
+    save(true); renderTwitchStatus(); renderTwitchWidget();
+  });
+  document.getElementById("twitchSetupBtn").addEventListener("click", ()=>openSettings("twitch"));
+
+  function renderTwitchStatus(){
+    const el = document.getElementById("twitchStatusArea");
+    if(state.twitch.accessToken && state.twitch.login){
+      el.innerHTML = `<span class="status-pill">● Connected as @${escapeHtml(state.twitch.login)}</span>`;
+    } else if(state.twitch.accessToken){
+      el.innerHTML = `<span class="status-pill">● Connected</span>`;
+    } else {
+      el.innerHTML = `<span class="status-pill off">○ Not connected</span>`;
+    }
+  }
+
+  async function twitchApi(path){
+    const res = await fetch(`https://api.twitch.tv/helix/${path}`, {
+      headers: {
+        "Authorization": `Bearer ${state.twitch.accessToken}`,
+        "Client-Id": state.twitch.clientId
+      }
+    });
+    if(res.status === 401){ throw new Error("auth"); }
+    return res.json();
+  }
+  async function fetchTwitchUserInfo(){
+    const data = await twitchApi("users");
+    const user = data.data && data.data[0];
+    if(user){
+      state.twitch.userId = user.id;
+      state.twitch.login = user.login;
+      state.twitch.displayName = user.display_name;
+      save();
+    }
+  }
+  async function renderTwitchWidget(){
+    const body = document.getElementById("twitchBody");
+    if(!state.twitch.accessToken || !state.twitch.clientId){
+      body.innerHTML = `<div class="twitch-empty">Link your Twitch account in Settings to see who's live.<br><button class="btn" id="twitchSetupBtn2">Connect Twitch</button></div>`;
+      const b = document.getElementById("twitchSetupBtn2"); if(b) b.onclick = ()=>openSettings("twitch");
+      return;
+    }
+    body.innerHTML = `<div class="twitch-empty">Loading…</div>`;
+    try{
+      if(!state.twitch.userId) await fetchTwitchUserInfo();
+      const data = await twitchApi(`streams/followed?user_id=${state.twitch.userId}&first=20`);
+      const streams = data.data || [];
+      if(!streams.length){
+        body.innerHTML = `<div class="twitch-empty">None of your followed channels are live right now.</div>`;
+        return;
+      }
+      const list = document.createElement("div");
+      list.className = "twitch-list";
+      streams.forEach(s=>{
+        const thumb = s.thumbnail_url.replace("{width}","144").replace("{height}","81");
+        const a = document.createElement("a");
+        a.className = "stream-item";
+        a.href = `https://twitch.tv/${s.user_login}`;
+        a.target = "_blank"; a.rel = "noopener";
+        a.innerHTML = `
+          <img class="stream-thumb" src="${thumb}" alt="">
+          <div class="stream-info">
+            <div class="stream-title">${escapeHtml(s.user_name)}</div>
+            <div class="stream-meta"><span class="live-dot"></span>${escapeHtml(s.game_name||"")} <span class="stream-viewers">· ${s.viewer_count.toLocaleString()} viewers</span></div>
+          </div>`;
+        list.appendChild(a);
+      });
+      body.innerHTML = "";
+      body.appendChild(list);
+    }catch(e){
+      if(e.message === "auth"){
+        body.innerHTML = `<div class="twitch-empty">Your Twitch session expired. Reconnect in Settings.<br><button class="btn" id="twitchReconnect">Open Settings</button></div>`;
+        document.getElementById("twitchReconnect").onclick = ()=>openSettings("twitch");
+      } else {
+        body.innerHTML = `<div class="twitch-empty">Couldn't load your live channels.<br><button class="btn" id="twitchRetry">Retry</button></div>`;
+        document.getElementById("twitchRetry").onclick = renderTwitchWidget;
+      }
+    }
+    renderTwitchStatus();
+  }
+  document.getElementById("twitchRefresh").addEventListener("click", renderTwitchWidget);
+
+  /* ============ LAYOUT SETTINGS ============ */
+  const WIDGET_META = {
+    weather:{label:"Weather", icon:"🌤️"},
+    calendar:{label:"Calendar", icon:"🗓️"},
+    twitch:{label:"Live on Twitch", icon:"🟣"},
+    notes:{label:"Notes", icon:"📝"}
+  };
+  function renderLayoutSettings(){
+    const wrap = document.getElementById("layoutOrderList");
+    wrap.innerHTML = "";
+    state.layout.order.forEach((key, idx)=>{
+      const meta = WIDGET_META[key];
+      const el = document.createElement("div");
+      el.className = "layout-order-item";
+      el.innerHTML = `
+        <div class="left">
+          <label class="switch"><input type="checkbox" ${state.layout.visible[key] ? "checked":""} data-key="${key}"><span class="slider"></span></label>
+          <span>${meta.icon} ${meta.label}</span>
+        </div>
+        <div class="order-btns">
+          <button data-dir="up" data-key="${key}" ${idx===0?"disabled":""}>↑</button>
+          <button data-dir="down" data-key="${key}" ${idx===state.layout.order.length-1?"disabled":""}>↓</button>
+        </div>`;
+      wrap.appendChild(el);
+    });
+    wrap.querySelectorAll('input[type=checkbox]').forEach(cb=>{
+      cb.addEventListener("change", e=>{
+        state.layout.visible[e.target.dataset.key] = e.target.checked;
+        applyLayout(); save(true);
+      });
+    });
+    wrap.querySelectorAll('button[data-dir]').forEach(btn=>{
+      btn.addEventListener("click", e=>{
+        const key = btn.dataset.key, dir = btn.dataset.dir;
+        const arr = state.layout.order;
+        const i = arr.indexOf(key);
+        const j = dir==="up" ? i-1 : i+1;
+        if(j<0 || j>=arr.length) return;
+        [arr[i],arr[j]] = [arr[j],arr[i]];
+        applyLayout(); renderLayoutSettings(); save(true);
+      });
+    });
+  }
+  function applyLayout(){
+    state.layout.order.forEach((key, idx)=>{
+      const el = document.getElementById("widget-"+key);
+      if(!el) return;
+      el.style.order = idx;
+      el.style.display = state.layout.visible[key] ? "" : "none";
+    });
+  }
+
+  /* ============ SETTINGS PANEL NAV ============ */
+  function openSettings(tab){
+    document.getElementById("settingsOverlay").classList.add("open");
+    if(tab) switchTab(tab);
+  }
+  function closeSettings(){ document.getElementById("settingsOverlay").classList.remove("open"); }
+  function switchTab(tab){
+    document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("active", t.dataset.tab===tab));
+    document.querySelectorAll(".pane").forEach(p=>p.classList.toggle("active", p.dataset.pane===tab));
+  }
+  document.getElementById("settingsBtn").addEventListener("click", ()=>openSettings());
+  document.getElementById("closeSettings").addEventListener("click", closeSettings);
+  document.getElementById("settingsOverlay").addEventListener("click", e=>{ if(e.target.id==="settingsOverlay") closeSettings(); });
+  document.querySelectorAll(".tab").forEach(t=> t.addEventListener("click", ()=>switchTab(t.dataset.tab)));
+  document.addEventListener("keydown", e=>{
+    if((e.metaKey||e.ctrlKey) && e.key===","){ e.preventDefault(); openSettings(); }
+    if(e.key==="Escape") closeSettings();
+  });
+
+  /* ============ DATA EXPORT / IMPORT ============ */
+  document.getElementById("exportBtn").addEventListener("click", ()=>{
+    const blob = new Blob([JSON.stringify(state, null, 2)], {type:"application/json"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = "ember-dashboard-data.json";
+    a.click();
+    URL.revokeObjectURL(url);
+  });
+  document.getElementById("importBtn").addEventListener("click", ()=> document.getElementById("fileImportInput").click());
+  document.getElementById("fileImportInput").addEventListener("change", e=>{
+    const file = e.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = ()=>{
+      try{
+        const imported = JSON.parse(reader.result);
+        state = deepMerge(structuredClone(DEFAULT_STATE), imported);
+        save(true);
+        renderEverything();
+        alert("Data imported successfully.");
+      }catch(err){ alert("Couldn't read that file — make sure it's a valid export from this dashboard."); }
+    };
+    reader.readAsText(file);
+  });
+  document.getElementById("resetBtn").addEventListener("click", ()=>{
+    if(!confirm("This clears all settings, events and notes stored in this browser. Continue?")) return;
+    state = structuredClone(DEFAULT_STATE);
+    save(true);
+    renderEverything();
+  });
+
+  /* ============ INIT ============ */
+  function renderEverything(){
+    applyTheme(); renderPresets();
+    document.getElementById("nameInput").value = state.name || "";
+    document.getElementById("twitchClientId").value = state.twitch.clientId || "";
+    document.getElementById("clock24Toggle").checked = state.layout.clock24;
+    document.getElementById("clockSecsToggle").checked = state.layout.clockSecs;
+    if(state.weather.name) document.getElementById("weatherCurrentLoc").textContent = "Location: " + state.weather.name;
+    updateGreeting(); tick();
+    renderCalendar(); renderAgenda();
+    renderNotes();
+    renderLayoutSettings(); applyLayout();
+    renderTwitchStatus(); renderTwitchWidget();
+    fetchWeather();
+  }
+
+  parseImplicitToken();
+  renderEverything();
+  setInterval(tick, 1000);
+  setInterval(updateGreeting, 60000);
+  setInterval(renderTwitchWidget, 3*60*1000);
+  setInterval(fetchWeather, 10*60*1000);
+})();
+</script>
+</body>
+</html>
